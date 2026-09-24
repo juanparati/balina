@@ -485,3 +485,34 @@ fn notes_roundtrip_through_io_document() {
     let n = back.notes.values().next().unwrap();
     assert_eq!(*n, s.doc().notes[id]);
 }
+
+#[test]
+fn note_markdown_and_raw_html_roundtrip_verbatim() {
+    // The document stores the raw markdown SOURCE; escaping is a render
+    // concern (note_style::note_html). Save/load must not alter it.
+    let text = "# Title\n<script>alert(1)</script>\n[x](javascript:evil) `a < b & c`";
+    let mut s = Session::new();
+    let id = ops::edit::add_note(&mut s, 0.0, 0.0).unwrap();
+    ops::edit::set_note_text(&mut s, id, text.into()).unwrap();
+
+    let back = Document::from_io_document(s.doc().to_io_document(), None);
+    assert_eq!(back.notes.values().next().unwrap().text, text);
+}
+
+#[test]
+fn note_text_commit_after_undo_of_add_is_a_clean_error() {
+    // The inline editor can try to commit AFTER an undo removed the note
+    // (undo-while-typing). The op must fail as BadRequest, never panic, and
+    // must not leave a stray undo step.
+    let mut s = Session::new();
+    let id = ops::edit::add_note(&mut s, 0.0, 0.0).unwrap();
+    ops::edit::undo(&mut s);
+    assert!(s.doc().notes.is_empty());
+    assert!(matches!(
+        ops::edit::set_note_text(&mut s, id, "typed".into()),
+        Err(CmdError::BadRequest(_))
+    ));
+    // Redo still restores the note — the failed commit didn't clobber it.
+    ops::edit::redo(&mut s);
+    assert!(s.doc().notes.contains_key(id));
+}

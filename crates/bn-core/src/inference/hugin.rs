@@ -43,7 +43,8 @@ pub fn propagate(
         }
     }
     let p_e = pot[0].sum();
-    if !(p_e > 1e-300) {
+    // NaN counts as a conflict too — same predicate as the old `!(p_e > 1e-300)`.
+    if p_e <= 1e-300 || p_e.is_nan() {
         return Err(InferenceError::ConflictingEvidence);
     }
     pot[0].normalize();

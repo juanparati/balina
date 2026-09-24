@@ -8,7 +8,7 @@ use dioxus::prelude::*;
 use crate::canvas::controller::VIEWPORT;
 use crate::canvas::node::kind_header_color;
 use crate::canvas::scene::Scene;
-use crate::canvas::sticky::note_fill;
+use crate::canvas::note_style::note_fill;
 use crate::state::SESSION;
 
 const MINI_W: f64 = 140.0;

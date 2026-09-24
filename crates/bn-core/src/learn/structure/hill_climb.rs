@@ -104,6 +104,7 @@ pub fn learn_hill_climb(
 /// copies of the best graph; returns the best DAG found and fills
 /// `report.score/iterations/restarts/score_trace`. Shared by plain hill
 /// climbing and the Grow-Shrink hybrid.
+#[allow(clippy::too_many_arguments)] // internal plumbing shared by 3 learners
 pub(crate) fn search<S: CountSource>(
     start: WorkDag,
     scorer: &mut FamilyScorer<S>,
@@ -179,6 +180,7 @@ fn perturb(
 /// `allowed` optionally whitelists parents per child (Grow-Shrink hybrid).
 /// `req` / `forb` are the index-space required / forbidden edge pairs.
 /// Shared by hill climbing, GS, and Structural EM.
+#[allow(clippy::too_many_arguments)] // internal plumbing shared by 3 learners
 pub(crate) fn climb<S: CountSource>(
     dag: &mut WorkDag,
     scorer: &mut FamilyScorer<S>,

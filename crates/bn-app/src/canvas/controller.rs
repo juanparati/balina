@@ -39,6 +39,9 @@ pub struct Hover {
     pub valid: bool,
 }
 
+/// `(id, start_x, start_y)` world positions of every item a drag will move.
+pub type DragStarts<Id> = Vec<(Id, f64, f64)>;
+
 /// What a toolbar palette ghost-drag drops on the canvas.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum PaletteItem {
@@ -54,15 +57,14 @@ pub enum Gesture {
     /// DRAG_THRESHOLD.
     PendingNodeDrag {
         start_client: (f64, f64),
-        /// (id, start_x, start_y) world positions of every node that will move.
-        starts: Vec<(NodeId, f64, f64)>,
+        starts: DragStarts<NodeId>,
         /// Same for every selected sticky note.
-        note_starts: Vec<(NoteId, f64, f64)>,
+        note_starts: DragStarts<NoteId>,
     },
     DragNodes {
         start_client: (f64, f64),
-        starts: Vec<(NodeId, f64, f64)>,
-        note_starts: Vec<(NoteId, f64, f64)>,
+        starts: DragStarts<NodeId>,
+        note_starts: DragStarts<NoteId>,
     },
     /// Dragging a sticky note's bottom-right resize handle.
     ResizeNote {
@@ -168,7 +170,7 @@ pub fn rubber_band_world_rect(
 pub fn drag_starts(
     clicked_node: Option<NodeId>,
     clicked_note: Option<NoteId>,
-) -> (Vec<(NodeId, f64, f64)>, Vec<(NoteId, f64, f64)>) {
+) -> (DragStarts<NodeId>, DragStarts<NoteId>) {
     let s = crate::state::SESSION.read();
     let sel = crate::state::SELECTION.read();
     let in_sel = clicked_node.is_some_and(|id| sel.nodes.contains(&id))

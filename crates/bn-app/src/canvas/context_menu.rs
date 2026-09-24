@@ -8,7 +8,7 @@ use bn_session::NoteId;
 use dioxus::prelude::*;
 
 use crate::canvas::controller::FIT_REQUEST;
-use crate::canvas::sticky::{note_fill, NOTE_PALETTE};
+use crate::canvas::note_style::{note_fill, NOTE_PALETTE};
 use crate::state::{
     exec, open_dialog, ContextMenuTarget, DialogDesc, CONTEXT_MENU, SESSION,
 };

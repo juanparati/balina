@@ -10,16 +10,11 @@ use crate::error::LearnError;
 use crate::learn::structure::math::ln_gamma;
 use crate::learn::structure::stats::DataView;
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub enum ScoreKind {
+    #[default]
     Bic,
     Bdeu { ess: f64 },
-}
-
-impl Default for ScoreKind {
-    fn default() -> Self {
-        ScoreKind::Bic
-    }
 }
 
 /// Where family counts come from. `family_counts` returns counts in

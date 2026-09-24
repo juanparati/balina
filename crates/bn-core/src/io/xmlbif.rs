@@ -72,10 +72,10 @@ pub fn from_xml(text: &str) -> Result<Document, IoError> {
                         }
                     }
                     ("VARIABLE", "PROPERTY") => {
-                        if let Some(v) = cur_var.as_mut() {
-                            if let Some(pos) = parse_position(&txt) {
-                                v.position = Some(pos);
-                            }
+                        if let Some(v) = cur_var.as_mut()
+                            && let Some(pos) = parse_position(&txt)
+                        {
+                            v.position = Some(pos);
                         }
                     }
                     (_, "FOR") => {

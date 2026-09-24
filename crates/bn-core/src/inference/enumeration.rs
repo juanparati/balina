@@ -49,7 +49,8 @@ pub fn posterior_enumeration(
         marginal[a[t]] += w;
     }
     let s: f64 = marginal.iter().sum();
-    if !(s > 0.0) {
+    // NaN counts as a conflict too — same predicate as the old `!(s > 0.0)`.
+    if s <= 0.0 || s.is_nan() {
         return Err(InferenceError::ConflictingEvidence);
     }
     Ok(marginal.into_iter().map(|v| v / s).collect())

@@ -80,7 +80,7 @@ pub fn learn_cpts(
                 cases
             }
             Err(e) => {
-                s.doc_mut().undo();
+                s.doc_mut().rollback_change();
                 return Err(e.into());
             }
         }
@@ -88,7 +88,7 @@ pub fn learn_cpts(
         match learn::read_cases_with(&s.doc().net, file, delim) {
             Ok(c) => c,
             Err(e) => {
-                s.doc_mut().undo();
+                s.doc_mut().rollback_change();
                 return Err(e.into());
             }
         }
@@ -136,7 +136,7 @@ pub fn learn_cpts(
             Ok(LearnCptsResult { report, summary })
         }
         Err(e) => {
-            s.doc_mut().undo();
+            s.doc_mut().rollback_change();
             Err(e)
         }
     }

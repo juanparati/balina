@@ -213,7 +213,7 @@ pub fn import_cases_with<R: std::io::Read>(
                 });
             }
             let mut names = acc.distinct;
-            names.sort_by(|a, b| a.to_ascii_lowercase().cmp(&b.to_ascii_lowercase()));
+            names.sort_by_key(|a| a.to_ascii_lowercase());
             let states: Vec<State> = names
                 .iter()
                 .map(|n| State { name: n.clone(), value: n.parse::<f64>().ok().filter(|v| v.is_finite()) })

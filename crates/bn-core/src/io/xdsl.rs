@@ -81,10 +81,10 @@ pub fn from_xml(text: &str) -> Result<Document, IoError> {
             }
             Event::Empty(e) => {
                 let tag = String::from_utf8_lossy(e.name().as_ref()).to_lowercase();
-                if tag == "state" {
-                    if let (Some(n), Some(id)) = (cur.as_mut(), get_attr(&e, "id")) {
-                        n.states.push(id);
-                    }
+                if tag == "state"
+                    && let (Some(n), Some(id)) = (cur.as_mut(), get_attr(&e, "id"))
+                {
+                    n.states.push(id);
                 }
             }
             Event::Text(t) => {
@@ -190,7 +190,7 @@ fn ident(s: &str) -> String {
         .chars()
         .map(|c| if c.is_alphanumeric() || c == '_' { c } else { '_' })
         .collect();
-    if out.chars().next().map_or(true, |c| c.is_ascii_digit()) {
+    if out.chars().next().is_none_or(|c| c.is_ascii_digit()) {
         out.insert(0, '_');
     }
     out

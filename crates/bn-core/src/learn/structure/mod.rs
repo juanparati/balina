@@ -37,6 +37,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use crate::error::LearnError;
 use crate::model::{Network, NodeId};
 
+/// Edges as `(parent, child)` positions into a search's target-node list.
+pub(crate) type IxEdges = Vec<(u32, u32)>;
+
 /// Background-knowledge constraints on the learned structure.
 ///
 /// `required` edges must appear in the output DAG; `forbidden` edges must not.
@@ -103,13 +106,13 @@ impl EdgeConstraints {
         Ok(())
     }
 
-    /// Project to index-space pairs over `targets`.
+    /// Project to index-space pairs over `targets`: `(required, forbidden)`.
     /// Any pair whose parent or child is not in `targets` is dropped.
-    pub(crate) fn to_ix(&self, targets: &[NodeId]) -> (Vec<(u32, u32)>, Vec<(u32, u32)>) {
+    pub(crate) fn to_ix(&self, targets: &[NodeId]) -> (IxEdges, IxEdges) {
         let ix = |id: NodeId| -> Option<u32> {
             targets.iter().position(|&t| t == id).map(|i| i as u32)
         };
-        let project = |v: &[(NodeId, NodeId)]| -> Vec<(u32, u32)> {
+        let project = |v: &[(NodeId, NodeId)]| -> IxEdges {
             v.iter().filter_map(|&(p, c)| Some((ix(p)?, ix(c)?))).collect()
         };
         (project(&self.required), project(&self.forbidden))

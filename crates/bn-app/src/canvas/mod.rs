@@ -15,6 +15,7 @@ pub mod edge;
 pub mod geometry;
 pub mod minimap;
 pub mod node;
+pub mod note_style;
 pub mod preview;
 pub mod scene;
 pub mod sticky;

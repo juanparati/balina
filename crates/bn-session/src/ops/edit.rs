@@ -21,7 +21,7 @@ pub fn add_edge(s: &mut Session, parent: NodeId, child: NodeId) -> Result<(), Cm
     check_node(&s.doc().net, child)?;
     s.doc_mut().begin_change();
     if let Err(e) = s.doc_mut().net.add_edge(parent, child) {
-        s.doc_mut().undo();
+        s.doc_mut().rollback_change();
         return Err(e.into());
     }
     s.finish(Dirt::Structure);
@@ -33,7 +33,7 @@ pub fn remove_edge(s: &mut Session, parent: NodeId, child: NodeId) -> Result<(),
     check_node(&s.doc().net, child)?;
     s.doc_mut().begin_change();
     if let Err(e) = s.doc_mut().net.remove_edge(parent, child) {
-        s.doc_mut().undo();
+        s.doc_mut().rollback_change();
         return Err(e.into());
     }
     s.finish(Dirt::Structure);
@@ -57,7 +57,7 @@ pub fn move_edge(
         .remove_edge(parent, from_child)
         .and_then(|()| s.doc_mut().net.add_edge(parent, to_child));
     if let Err(e) = r {
-        s.doc_mut().undo();
+        s.doc_mut().rollback_change();
         return Err(e.into());
     }
     s.finish(Dirt::Structure);
@@ -132,7 +132,7 @@ pub fn update_node_props(
     };
     if let Err(e) = apply(s) {
         // Roll the snapshot back so a failed apply leaves no half-edit.
-        s.doc_mut().undo();
+        s.doc_mut().rollback_change();
         return Err(e);
     }
     s.finish(Dirt::Structure);

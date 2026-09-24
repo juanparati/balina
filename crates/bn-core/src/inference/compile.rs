@@ -198,7 +198,7 @@ impl JunctionTree {
                 cand.push((w, i, j));
             }
         }
-        cand.sort_by(|a, b| b.0.cmp(&a.0));
+        cand.sort_by_key(|&(w, ..)| std::cmp::Reverse(w));
         let mut uf: Vec<usize> = (0..cliques.len()).collect();
         fn find(uf: &mut Vec<usize>, x: usize) -> usize {
             if uf[x] != x {
@@ -232,7 +232,7 @@ impl JunctionTree {
             for (ci, c) in cliques.iter().enumerate() {
                 if vars.iter().all(|v| c.contains(&(v.0 as usize))) {
                     let w = weight_of(c);
-                    if best.map_or(true, |(_, bw)| w < bw) {
+                    if best.is_none_or(|(_, bw)| w < bw) {
                         best = Some((ci, w));
                     }
                 }
@@ -262,7 +262,7 @@ impl JunctionTree {
         for (ci, c) in self.cliques.iter().enumerate() {
             if vars.iter().all(|v| c.contains(v)) {
                 let w: f64 = c.iter().map(|v| cards[v.0 as usize] as f64).product();
-                if best.map_or(true, |(_, bw)| w < bw) {
+                if best.is_none_or(|(_, bw)| w < bw) {
                     best = Some((ci, w));
                 }
             }

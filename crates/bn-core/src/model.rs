@@ -250,10 +250,10 @@ impl Network {
         if name.trim().is_empty() {
             return Err(ModelError::InvalidName(name.into()));
         }
-        if let Some(other) = self.find_by_name(name) {
-            if other != id {
-                return Err(ModelError::DuplicateName(name.into()));
-            }
+        if let Some(other) = self.find_by_name(name)
+            && other != id
+        {
+            return Err(ModelError::DuplicateName(name.into()));
         }
         self.nodes[id].name = name.into();
         Ok(())

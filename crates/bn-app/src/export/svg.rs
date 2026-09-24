@@ -14,7 +14,7 @@ use crate::canvas::edge::EDGE_STROKE;
 use crate::canvas::geometry::Rect;
 use crate::canvas::node::{belief_row_display, kind_body_color, kind_header_color};
 use crate::canvas::scene::{build_scene, NoteOverrides};
-use crate::canvas::sticky::{note_bar_color, note_fill, note_plain_text};
+use crate::canvas::note_style::{note_bar_color, note_fill, note_plain_text};
 use crate::logic::format::expected_value;
 
 pub const PADDING: f64 = 24.0;

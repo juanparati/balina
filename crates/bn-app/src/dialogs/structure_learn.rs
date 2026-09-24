@@ -397,14 +397,13 @@ pub fn StructureLearnDialog() -> Element {
                                             || *new_req_from.read() == *new_req_to.read()
                                             || *running.read(),
                                         onclick: move |_| {
-                                            if let (Some(p), Some(c)) =
-                                                (*new_req_from.read(), *new_req_to.read())
+                                            let (from, to) =
+                                                (*new_req_from.read(), *new_req_to.read());
+                                            if let (Some(p), Some(c)) = (from, to)
+                                                && p != c
+                                                && !required_edges.read().contains(&(p, c))
                                             {
-                                                if p != c
-                                                    && !required_edges.read().contains(&(p, c))
-                                                {
-                                                    required_edges.write().push((p, c));
-                                                }
+                                                required_edges.write().push((p, c));
                                             }
                                         },
                                         "Add"
@@ -476,14 +475,13 @@ pub fn StructureLearnDialog() -> Element {
                                             || *new_forb_from.read() == *new_forb_to.read()
                                             || *running.read(),
                                         onclick: move |_| {
-                                            if let (Some(p), Some(c)) =
-                                                (*new_forb_from.read(), *new_forb_to.read())
+                                            let (from, to) =
+                                                (*new_forb_from.read(), *new_forb_to.read());
+                                            if let (Some(p), Some(c)) = (from, to)
+                                                && p != c
+                                                && !forbidden_edges.read().contains(&(p, c))
                                             {
-                                                if p != c
-                                                    && !forbidden_edges.read().contains(&(p, c))
-                                                {
-                                                    forbidden_edges.write().push((p, c));
-                                                }
+                                                forbidden_edges.write().push((p, c));
                                             }
                                         },
                                         "Add"

@@ -57,24 +57,25 @@ pub(crate) fn state_for_value(node: &Node, raw: &str) -> Result<usize, CaseError
     if let Some(s) = node.state_index(raw) {
         return Ok(s);
     }
-    if let Ok(s) = raw.parse::<usize>() {
-        if s < node.n_states() {
-            return Ok(s);
-        }
+    if let Ok(s) = raw.parse::<usize>()
+        && s < node.n_states()
+    {
+        return Ok(s);
     }
-    if let Ok(x) = raw.parse::<f64>() {
-        if !node.states.is_empty() && node.states.iter().all(|s| s.value.is_some()) {
-            let best = node
-                .states
-                .iter()
-                .enumerate()
-                .min_by(|(_, a), (_, b)| {
-                    (a.value.unwrap() - x).abs().total_cmp(&(b.value.unwrap() - x).abs())
-                })
-                .map(|(i, _)| i)
-                .unwrap();
-            return Ok(best);
-        }
+    if let Ok(x) = raw.parse::<f64>()
+        && !node.states.is_empty()
+        && node.states.iter().all(|s| s.value.is_some())
+    {
+        let best = node
+            .states
+            .iter()
+            .enumerate()
+            .min_by(|(_, a), (_, b)| {
+                (a.value.unwrap() - x).abs().total_cmp(&(b.value.unwrap() - x).abs())
+            })
+            .map(|(i, _)| i)
+            .unwrap();
+        return Ok(best);
     }
     Err(CaseError::UnknownState { node: node.name.clone(), value: raw.to_string() })
 }

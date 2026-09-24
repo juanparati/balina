@@ -17,7 +17,7 @@ fn place(visual: &mut VisualInfo, name: &str, x: f32, y: f32) {
 
 fn asia() -> Document {
     let mut net = Network::new("Chest Clinic (Asia)");
-    let mut n = |net: &mut Network, name: &str| net.add_node(name, NodeKind::Chance, two()).unwrap();
+    let n = |net: &mut Network, name: &str| net.add_node(name, NodeKind::Chance, two()).unwrap();
     let asia = n(&mut net, "VisitAsia");
     let tub = n(&mut net, "Tuberculosis");
     let smoke = n(&mut net, "Smoking");

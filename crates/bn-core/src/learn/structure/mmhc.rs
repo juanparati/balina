@@ -161,10 +161,10 @@ fn cpcs_ix(
                 cpc.push(xstar);
                 for x in cands.iter().copied().filter(|&x| x != xstar && !cpc.contains(&x)) {
                     let (mi, _) = tester.cmi(t, x, &[xstar])?;
-                    if let Some(e) = f.iter_mut().find(|(_, xi)| *xi == x) {
-                        if mi < e.0 {
-                            e.0 = mi;
-                        }
+                    if let Some(e) = f.iter_mut().find(|(_, xi)| *xi == x)
+                        && mi < e.0
+                    {
+                        e.0 = mi;
                     }
                 }
             } else {

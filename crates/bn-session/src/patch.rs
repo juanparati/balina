@@ -81,7 +81,7 @@ pub fn apply_structure_patch(
             Ok(StructureLearnResult { report, summary, warnings })
         }
         Err(e) => {
-            s.tab_mut(tab_id).doc.undo();
+            s.tab_mut(tab_id).doc.rollback_change();
             Err(e)
         }
     }

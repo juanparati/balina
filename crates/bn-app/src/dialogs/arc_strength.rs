@@ -26,7 +26,7 @@ pub fn ArcStrengthDialog() -> Element {
     let max_mi = live_rows.first().map(|r| r.mutual_info).unwrap_or(0.0).max(1e-12);
 
     let run = move |_| {
-        match exec(|s| bn_session::ops::tools::run_arc_strengths(s)) {
+        match exec(bn_session::ops::tools::run_arc_strengths) {
             Some(r) => {
                 rows.set(r);
                 error.set(None);

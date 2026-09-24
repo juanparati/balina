@@ -58,12 +58,8 @@ pub fn learn_pc(
     let mut report = PcReport::default();
 
     // ---- skeleton (stable) ------------------------------------------------
-    let mut adj = vec![vec![false; n]; n];
-    for i in 0..n {
-        for j in 0..n {
-            adj[i][j] = i != j;
-        }
-    }
+    let mut adj: Vec<Vec<bool>> =
+        (0..n).map(|i| (0..n).map(|j| i != j).collect()).collect();
     // Apply blacklist before skeleton: forbidden pairs cannot be adjacent.
     for &(p, c) in &forb {
         adj[p as usize][c as usize] = false;
@@ -75,6 +71,9 @@ pub fn learn_pc(
         ctrl.tick(Progress { phase: "skeleton", done: level, total: opts.ci.max_cond + 1, score: None });
         let snapshot = adj.clone(); // all level-l tests see the same graph
         let mut any_candidate = false;
+        // Index loops on purpose: (x, y) are also sepset keys and adj is
+        // both read and mutated across cells.
+        #[allow(clippy::needless_range_loop)]
         for x in 0..n {
             for y in x + 1..n {
                 if !adj[x][y] {

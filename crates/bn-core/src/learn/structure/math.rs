@@ -7,9 +7,9 @@ pub(crate) fn ln_gamma(x: f64) -> f64 {
     debug_assert!(x > 0.0, "ln_gamma domain: x > 0, got {x}");
     const G: f64 = 7.0;
     const COEF: [f64; 9] = [
-        0.999_999_999_999_809_93,
+        0.999_999_999_999_809_9,
         676.520_368_121_885_1,
-        -1259.139_216_722_402_8,
+        -1_259.139_216_722_402_8,
         771.323_428_777_653_1,
         -176.615_029_162_140_6,
         12.507_343_278_686_905,
@@ -115,7 +115,7 @@ mod tests {
         let half = std::f64::consts::PI.sqrt().ln();
         assert!((ln_gamma(0.5) - half).abs() < 1e-12);
         // Small fractional argument via reflection.
-        assert!((ln_gamma(0.1) - 2.252_712_651_734_205_9).abs() < 1e-10);
+        assert!((ln_gamma(0.1) - 2.252_712_651_734_206).abs() < 1e-10);
     }
 
     #[test]

@@ -180,6 +180,15 @@ impl Document {
         !self.redo.is_empty()
     }
 
+    /// Roll back the snapshot pushed by a matching `begin_change()` after a
+    /// FAILED mutation. Unlike `undo()` this leaves no ghost redo entry; the
+    /// `change_seq` bump from `begin_change()` stays (bumps are conservative).
+    pub fn rollback_change(&mut self) {
+        if let Some(s) = self.undo.pop() {
+            self.restore(s);
+        }
+    }
+
     pub fn undo(&mut self) -> Dirt {
         if let Some(s) = self.undo.pop() {
             self.change_seq += 1;
@@ -243,7 +252,15 @@ impl Document {
             NodeKind::Utility => vec![],
             _ => vec![State::new("state0"), State::new("state1")],
         };
-        let id = self.net.add_node(&name, kind, states)?;
+        // `fresh_name` makes failure unreachable today, but roll back the
+        // snapshot anyway — a stray begin_change() would corrupt undo.
+        let id = match self.net.add_node(&name, kind, states) {
+            Ok(id) => id,
+            Err(e) => {
+                self.rollback_change();
+                return Err(e);
+            }
+        };
         let display = match kind {
             NodeKind::Utility => DisplayMode::ExpectedValue,
             _ => DisplayMode::BeliefBars,

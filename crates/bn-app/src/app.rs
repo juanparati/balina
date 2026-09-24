@@ -6,7 +6,7 @@ use dioxus::prelude::*;
 use crate::canvas::context_menu::ContextMenuHost;
 use crate::canvas::controller::{Gesture, PaletteItem, GESTURE, VIEWPORT};
 use crate::canvas::node::kind_header_color;
-use crate::canvas::sticky::note_fill;
+use crate::canvas::note_style::note_fill;
 use crate::chrome::toolbar::{add_at_center, palette_footprint, Toolbar};
 use crate::chrome::{message_log::MessageLog, status_bar::StatusBar};
 use crate::state::{exec, SESSION};

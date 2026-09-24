@@ -330,9 +330,9 @@ fn umbrella_brute_meu(net: &Network) -> (f64, Vec<usize>) {
         for a_sunny in 0..2 {
             let mut eu = 0.0;
             for weather in 0..2 {
-                for fc in 0..2 {
+                for (fc, &p_fc) in f_given_w[weather].iter().enumerate() {
                     let act = if fc == 0 { a_rainy } else { a_sunny };
-                    eu += w[weather] * f_given_w[weather][fc] * u(weather, act);
+                    eu += w[weather] * p_fc * u(weather, act);
                 }
             }
             if eu > best.0 {

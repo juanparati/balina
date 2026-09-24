@@ -113,12 +113,10 @@ pub fn NetworkCanvas() -> Element {
             Gesture::ResizeNote { id, .. } => {
                 let size = *NOTE_RESIZE.read();
                 *GESTURE.write() = Gesture::Idle;
-                if let Some((rid, w, h)) = size {
-                    if rid == id {
-                        exec(|s| {
-                            bn_session::ops::edit::resize_note(s, id, w as f32, h as f32)
-                        });
-                    }
+                if let Some((rid, w, h)) = size
+                    && rid == id
+                {
+                    exec(|s| bn_session::ops::edit::resize_note(s, id, w as f32, h as f32));
                 }
                 *NOTE_RESIZE.write() = None;
             }
