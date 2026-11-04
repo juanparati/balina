@@ -30,6 +30,10 @@ static PROGRESS: GlobalSignal<(u64, u64)> = Signal::global(|| (0, 0));
 static ERROR: GlobalSignal<String> = Signal::global(String::new);
 /// One download at a time (`start` refuses while one runs), so one flag.
 static CANCEL: AtomicBool = AtomicBool::new(false);
+/// Bumped after every completed install. `is_installed()` is a plain
+/// filesystem check, so components showing install status read this to get a
+/// re-render when a download lands.
+pub static INSTALL_REV: GlobalSignal<u32> = Signal::global(|| 0);
 
 /// Show the download overlay for `checkpoint`. If a download is already
 /// running, the overlay reattaches to it instead of resetting.
@@ -77,6 +81,7 @@ fn start() {
         match result {
             Ok(()) => {
                 *PHASE.write() = Phase::Done;
+                *INSTALL_REV.write() += 1;
                 log_message(format!("Laya model `{}` installed.", cp.id()));
             }
             Err(LayaError::Cancelled) => {

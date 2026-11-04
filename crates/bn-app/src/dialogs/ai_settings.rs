@@ -68,6 +68,10 @@ fn StructuredSection(checkpoint: LayaCheckpoint, on_change: EventHandler<LayaChe
     let mut test_ok = use_signal(|| false);
     let mut testing = use_signal(|| false);
 
+    // Subscribe to completed downloads: `is_installed()` is a plain
+    // filesystem check, so without this edge the section would keep showing
+    // the pre-download status until the dialog is reopened.
+    let _ = *crate::dialogs::laya_download::INSTALL_REV.read();
     let installed = checkpoint.is_installed();
 
     rsx! {
