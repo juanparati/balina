@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.alinatudoran.balina</id>
+  <name>Balina</name>
+  <summary>Build, analyse and learn Bayesian networks and influence diagrams</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <developer id="com.alinatudoran">
+    <name>Alina Tudoran</name>
+  </developer>
+  <description>
+    <p>
+      BALINA (Bayesian And Logical Influence-diagram Network Application) combines a
+      graphical editor with exact probabilistic inference (junction tree), decision
+      analysis (maximum expected utility and optimal policies), parameter learning
+      (Dirichlet priors, EM), structure learning (PC, Hill-Climbing, Tabu Search, MMHC),
+      sensitivity analysis and stochastic simulation.
+    </p>
+    <p>
+      It reads and writes XMLBIF and GeNIe/SMILE files and CSV case data.
+    </p>
+  </description>
+  <launchable type="desktop-id">com.alinatudoran.balina.desktop</launchable>
+  <url type="homepage">https://github.com/alinatudoran/balina</url>
+  <url type="bugtracker">https://github.com/alinatudoran/balina/issues</url>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://raw.githubusercontent.com/alinatudoran/balina/master/demo/screenshot.png</image>
+    </screenshot>
+  </screenshots>
+  <content_rating type="oars-1.1"/>
+  <!-- Add a <release> per version bump (newest first). -->
+  <releases>
+    <release version="0.13.0" date="2026-11-05"/>
+  </releases>
+</component>

@@ -55,6 +55,25 @@ Demos available for the WebAssembly version:
 
 
 
+## Installing on Linux
+
+Linux releases ship as Flatpak bundles, one per CPU architecture:
+`balina-x86_64.flatpak` and `balina-aarch64.flatpak` (check yours with `uname -m`).
+Download the one for your machine from the release page, then:
+
+```sh
+flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo   # one-time, for the GNOME runtime
+flatpak install --user balina-x86_64.flatpak
+flatpak run com.alinatudoran.balina
+```
+
+If the window stays blank (seen with some NVIDIA drivers), disable WebKit's
+DMA-BUF renderer:
+
+```sh
+flatpak override --user --env=WEBKIT_DISABLE_DMABUF_RENDERER=1 com.alinatudoran.balina
+```
+
 ## Building
 
 **Prerequisites:** Rust (edition 2024, tested on rustc 1.95+). Node is only

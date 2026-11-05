@@ -1,0 +1,101 @@
+# Flatpak build for the Linux release (`.github/workflows/release.yml`).
+# Built per architecture (x86_64, aarch64) on native runners; each produces a
+# single-arch .flatpak bundle attached to the GitHub release.
+#
+# Not Flathub-ready on purpose: the balina module fetches crates, rustup and
+# the Tailwind CLI over the network at build time (`--share=network`).
+id: com.alinatudoran.balina
+# GNOME 51 is the last runtime that ships webkit2gtk-4.1 (the GTK3 WebKit API
+# wry uses); it is supported until September 2027. Moving past it means
+# building WebKitGTK 4.1 as a module or a GTK4 / webkitgtk-6.0 renderer.
+runtime: org.gnome.Platform
+runtime-version: '51'
+sdk: org.gnome.Sdk
+command: balina
+
+finish-args:
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=dri
+  # AI providers (reqwest) and the Laya model download from huggingface.co.
+  - --share=network
+  # settings.json and the Laya models live under $HOME/.config/balina on every
+  # platform (ai/settings.rs, ai/laya_local.rs), not in the XDG config dir.
+  # File open/save goes through the xdg-desktop-portal (rfd), so no broader
+  # filesystem access is needed.
+  - --filesystem=~/.config/balina:create
+
+modules:
+  # muda (the native menu) links libxdo; the GNOME runtime doesn't ship it.
+  - name: libxdo
+    buildsystem: simple
+    build-commands:
+      - make PREFIX=/app installlib
+    sources:
+      - type: archive
+        url: https://github.com/jordansissel/xdotool/archive/refs/tags/v4.20260303.1.tar.gz
+        sha256: c1f971a384da588eb99ca0755fc4300316d49c1e612537e3f1de52215e104fa3
+
+  # rfd's portal backend shows message dialogs (unsaved-changes confirmations)
+  # by spawning zenity, which the runtime doesn't ship.
+  - name: zenity
+    buildsystem: meson
+    config-opts:
+      - -Dmanpage=false
+    cleanup:
+      - /share/help
+    sources:
+      - type: archive
+        url: https://download.gnome.org/sources/zenity/4.2/zenity-4.2.2.tar.xz
+        sha256: 019186a996096ef4fc356e21577b5673f5baa3a29ac8e3d608b753371c18018d
+
+  - name: balina
+    buildsystem: simple
+    build-options:
+      build-args:
+        - --share=network
+      append-path: /run/build/balina/cargo/bin:/run/build/balina/dx
+      env:
+        CARGO_HOME: /run/build/balina/cargo
+        RUSTUP_HOME: /run/build/balina/rustup
+        # libxdo-sys emits a bare `-lxdo`; point the linker at the module above.
+        LIBRARY_PATH: /app/lib
+    build-commands:
+      # Same toolchain as the macOS/Windows release jobs.
+      - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path --profile minimal --default-toolchain 1.95.0
+      - cd crates/bn-app && dx build --release
+      # dioxus-asset-resolver looks for assets in ../lib/<dir>/assets relative
+      # to the executable on Linux.
+      - install -Dm755 target/dx/balina/release/linux/app/balina /app/bin/balina
+      - mkdir -p /app/lib/balina
+      - cp -r target/dx/balina/release/linux/app/assets /app/lib/balina/
+      - install -Dm644 packaging/flatpak/com.alinatudoran.balina.desktop -t /app/share/applications
+      - install -Dm644 packaging/flatpak/com.alinatudoran.balina.metainfo.xml -t /app/share/metainfo
+      - install -Dm644 packaging/flatpak/com.alinatudoran.balina.png -t /app/share/icons/hicolor/512x512/apps
+    sources:
+      - type: dir
+        path: ../..
+        skip:
+          - target
+          - .git
+          - .idea
+          - .claude
+          - crates/bn-app/node_modules
+          # flatpak-github-actions working dirs (repo root)
+          - .flatpak-builder
+          - flatpak_app
+          - repo
+      # dx must match the dioxus version in Cargo.lock.
+      - type: archive
+        only-arches: [x86_64]
+        url: https://github.com/DioxusLabs/dioxus/releases/download/v0.7.10/dx-x86_64-unknown-linux-gnu.tar.gz
+        sha256: 4363e4ed2a3f1eb7f4d38d2d59aed59ce43271c44c16b425e92c89a64761fbe7
+        strip-components: 0
+        dest: dx
+      - type: archive
+        only-arches: [aarch64]
+        url: https://github.com/DioxusLabs/dioxus/releases/download/v0.7.10/dx-aarch64-unknown-linux-gnu.tar.gz
+        sha256: 8f1a17d3218700ffbe15e6540d936a178b2556fc801121a31082e3ba4ab9ef55
+        strip-components: 0
+        dest: dx

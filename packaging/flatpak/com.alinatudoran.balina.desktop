@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Balina
+GenericName=Bayesian Network Editor
+Comment=Build, analyse and learn Bayesian networks and influence diagrams
+Exec=balina
+Icon=com.alinatudoran.balina
+Terminal=false
+Categories=Science;Math;Education;
+Keywords=Bayesian;network;influence;diagram;probability;inference;
