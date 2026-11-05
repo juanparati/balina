@@ -14,9 +14,14 @@ const OPEN_FILTERS: &[(&str, &[&str])] = &[
     ("XDSL (GeNIe)", &["xdsl"]),
 ];
 
-/// True to proceed (document unmodified, or the user confirmed discarding).
+/// True to proceed (document unmodified or empty, or the user confirmed
+/// discarding).
 async fn confirm_discard(action: &str) -> bool {
-    if !SESSION.read().modified {
+    let keep = {
+        let s = SESSION.read();
+        s.modified && !s.is_empty()
+    };
+    if !keep {
         return true;
     }
     crate::platform::confirm(

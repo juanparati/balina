@@ -28,9 +28,14 @@ fn with_filters(mut d: rfd::AsyncFileDialog, filters: &[(&str, &[&str])]) -> rfd
     d
 }
 
-/// True to proceed (document unmodified, or the user confirmed discarding).
+/// True to proceed (document unmodified or empty, or the user confirmed
+/// discarding).
 pub(crate) async fn confirm_discard(action: &str) -> bool {
-    if !SESSION.read().modified {
+    let keep = {
+        let s = SESSION.read();
+        s.modified && !s.is_empty()
+    };
+    if !keep {
         return true;
     }
     crate::platform::confirm(

@@ -120,6 +120,9 @@ pub struct Document {
 
 const UNDO_CAP: usize = 100;
 
+/// Network name of a fresh document.
+const UNTITLED: &str = "Untitled";
+
 impl Default for Document {
     fn default() -> Self {
         Document::new()
@@ -129,7 +132,7 @@ impl Default for Document {
 impl Document {
     pub fn new() -> Document {
         Document {
-            net: Network::new("Untitled"),
+            net: Network::new(UNTITLED),
             visual: SecondaryMap::new(),
             notes: SlotMap::with_key(),
             evidence: Evidence::new(),
@@ -140,6 +143,15 @@ impl Document {
             undo: vec![],
             redo: vec![],
         }
+    }
+
+    /// True when nothing distinguishes this document from a fresh one: no
+    /// nodes, no notes, and the default network name and comment.
+    pub fn is_empty(&self) -> bool {
+        self.net.is_empty()
+            && self.notes.is_empty()
+            && self.net.name == UNTITLED
+            && self.net.comment.is_empty()
     }
 
     // ---- undo ----------------------------------------------------------

@@ -103,6 +103,10 @@ impl Session {
     pub fn tabs(&self) -> &SlotMap<TabId, Tab> {
         &self.tabs
     }
+    /// True when every tab is an empty document — nothing worth keeping.
+    pub fn is_empty(&self) -> bool {
+        self.tabs.values().all(|t| t.doc.is_empty())
+    }
 
     // ---- tab label (defaults to doc.net.name) ------------------------------
 
