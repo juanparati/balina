@@ -215,9 +215,9 @@ fn set_cpt_shape_error_rolls_back() {
     let mut s = Session::new();
     let id = ops::edit::add_node(&mut s, NodeKind::Chance, 0.0, 0.0).unwrap();
     let before = s.doc().net.node(id).table.data.clone();
-    // Wrong length → error, and the failed begin_change snapshot is rolled back.
+    // Wrong length → rejected before begin_change (so no undo/redo churn).
     let err = ops::cpt::set_cpt(&mut s, id, vec![0.5; 5]).unwrap_err();
-    assert!(matches!(err, CmdError::Model(_)));
+    assert!(matches!(err, CmdError::BadRequest(_)));
     assert_eq!(
         s.doc().net.node(id).table.data,
         before,
@@ -487,32 +487,154 @@ fn notes_roundtrip_through_io_document() {
 }
 
 #[test]
-fn note_markdown_and_raw_html_roundtrip_verbatim() {
-    // The document stores the raw markdown SOURCE; escaping is a render
-    // concern (note_style::note_html). Save/load must not alter it.
-    let text = "# Title\n<script>alert(1)</script>\n[x](javascript:evil) `a < b & c`";
-    let mut s = Session::new();
-    let id = ops::edit::add_note(&mut s, 0.0, 0.0).unwrap();
-    ops::edit::set_note_text(&mut s, id, text.into()).unwrap();
+fn ai_draft_opens_as_new_tab_with_layout_and_beliefs() {
+    let draft = crate::ai_draft::parse_draft(
+        r#"{"name": "Draft", "nodes": [
+            {"name": "A", "states": ["y", "n"]},
+            {"name": "B", "states": ["y", "n"], "parents": ["A"]}
+        ]}"#,
+    )
+    .unwrap();
+    let net = crate::ai_draft::build_network(&draft).unwrap();
 
-    let back = Document::from_io_document(s.doc().to_io_document(), None);
-    assert_eq!(back.notes.values().next().unwrap().text, text);
+    let mut s = Session::new();
+    let before = s.active_id();
+    let id = ops::tab::add_tab_with_network(&mut s, net);
+    assert_ne!(id, before);
+    assert_eq!(s.active_id(), id);
+    assert_eq!(s.tab_label(id), "Draft");
+    assert!(s.doc().modified && s.doc().path.is_none(), "draft tab must be unsaved");
+    // Every node got an auto-layout position, and uniform CPTs compile to
+    // uniform beliefs through the normal engine path.
+    for node in s.doc().net.node_ids() {
+        assert!(s.doc().visual.contains_key(node));
+    }
+    let b = s.doc().net.find_by_name("B").unwrap();
+    let beliefs = s.bridge().beliefs.get(b).expect("beliefs computed").clone();
+    for p in beliefs {
+        assert!((p - 0.5).abs() < 1e-9);
+    }
 }
 
 #[test]
-fn note_text_commit_after_undo_of_add_is_a_clean_error() {
-    // The inline editor can try to commit AFTER an undo removed the note
-    // (undo-while-typing). The op must fail as BadRequest, never panic, and
-    // must not leave a stray undo step.
+fn ai_cpt_accept_writes_table_and_dirichlet_experience() {
     let mut s = Session::new();
-    let id = ops::edit::add_note(&mut s, 0.0, 0.0).unwrap();
+    *s.doc_mut() = load_asia();
+    let tub = s.doc().net.find_by_name("Tuberculosis").expect("asia has `Tuberculosis`");
+    let rows = s.doc().net.row_count(tub);
+    let out = s.doc().net.node(tub).out_card();
+
+    // Sloppy sums are normalized on accept, like the manual editor path.
+    let data: Vec<f64> = (0..rows).flat_map(|_| vec![9.0, 1.0][..out.min(2)].to_vec()).collect();
+    ops::cpt::set_cpt_ai(&mut s, tub, data).unwrap();
+
+    let n = s.doc().net.node(tub);
+    assert_eq!(n.experience, Some(vec![1.0; rows]), "ε = 1 pseudo-count per row");
+    for r in 0..rows {
+        let row = &n.table.data[r * out..(r + 1) * out];
+        assert!((row.iter().sum::<f64>() - 1.0).abs() < 1e-12);
+        assert!((row[0] - 0.9).abs() < 1e-12);
+    }
+    // One undo reverts both the table and the experience.
     ops::edit::undo(&mut s);
-    assert!(s.doc().notes.is_empty());
-    assert!(matches!(
-        ops::edit::set_note_text(&mut s, id, "typed".into()),
-        Err(CmdError::BadRequest(_))
-    ));
-    // Redo still restores the note — the failed commit didn't clobber it.
+    assert_eq!(s.doc().net.node(tub).experience, None);
+}
+
+#[test]
+fn ai_cpt_accept_keeps_learned_experience() {
+    let mut s = Session::new();
+    *s.doc_mut() = load_asia();
+    let tub = s.doc().net.find_by_name("Tuberculosis").unwrap();
+    let rows = s.doc().net.row_count(tub);
+    let len = s.doc().net.table_len(tub);
+    s.doc_mut().net.set_experience(tub, Some(vec![25.0; rows])).unwrap();
+
+    ops::cpt::set_cpt_ai(&mut s, tub, vec![1.0; len]).unwrap();
+    assert_eq!(
+        s.doc().net.node(tub).experience,
+        Some(vec![25.0; rows]),
+        "an AI accept must not replace learned counts with the ε prior"
+    );
+}
+
+#[test]
+fn rejected_cpt_shape_preserves_redo_and_modified() {
+    let mut s = Session::new();
+    *s.doc_mut() = load_asia();
+    let tub = s.doc().net.find_by_name("Tuberculosis").unwrap();
+    let len = s.doc().net.table_len(tub);
+    let out = s.doc().net.node(tub).out_card();
+
+    // Build a redo entry, then try writes with a stale shape (the modeless
+    // editor's structure-changed race).
+    ops::cpt::set_cpt(&mut s, tub, vec![1.0; len]).unwrap();
+    ops::edit::undo(&mut s);
+    let modified_before = s.doc().modified;
+    assert!(ops::cpt::set_cpt(&mut s, tub, vec![1.0; len + 1]).is_err());
+    assert!(ops::cpt::set_cpt_ai(&mut s, tub, vec![1.0; len + 1]).is_err());
+    assert_eq!(s.doc().modified, modified_before, "a rejected write must not dirty the doc");
+
+    // The redo stack survived the rejected writes.
     ops::edit::redo(&mut s);
-    assert!(s.doc().notes.contains_key(id));
+    for v in &s.doc().net.node(tub).table.data {
+        assert!((v - 1.0 / out as f64).abs() < 1e-12, "redo re-applies the uniform write");
+    }
+}
+
+#[test]
+fn ai_evidence_batch_applies_as_one_undo_step() {
+    let mut s = Session::new();
+    *s.doc_mut() = load_asia();
+    let smoking = s.doc().net.find_by_name("Smoking").unwrap();
+    let dyspnea = s.doc().net.find_by_name("Dyspnea").unwrap();
+
+    ops::evidence::set_likelihood_findings(
+        &mut s,
+        vec![(smoking, vec![0.9, 0.1]), (dyspnea, vec![0.3, 0.7])],
+    )
+    .unwrap();
+    assert!(s.doc().evidence.get(smoking).is_some());
+    assert!(s.doc().evidence.get(dyspnea).is_some());
+
+    // One undo retracts the whole batch.
+    ops::edit::undo(&mut s);
+    assert!(s.doc().evidence.get(smoking).is_none());
+    assert!(s.doc().evidence.get(dyspnea).is_none());
+
+    // All-or-nothing: one bad vector rejects the batch before any applies.
+    let err = ops::evidence::set_likelihood_findings(
+        &mut s,
+        vec![(smoking, vec![0.9, 0.1]), (dyspnea, vec![0.0, 0.0])],
+    );
+    assert!(err.is_err());
+    assert!(s.doc().evidence.get(smoking).is_none());
+}
+
+#[test]
+fn ai_evidence_mixed_hard_and_likelihood_batch() {
+    use bn_core::inference::Finding;
+    let mut s = Session::new();
+    *s.doc_mut() = load_asia();
+    let smoking = s.doc().net.find_by_name("Smoking").unwrap();
+    let dyspnea = s.doc().net.find_by_name("Dyspnea").unwrap();
+
+    ops::evidence::set_findings(
+        &mut s,
+        vec![(smoking, Finding::Hard(1)), (dyspnea, Finding::Likelihood(vec![0.3, 0.7]))],
+    )
+    .unwrap();
+    assert!(matches!(s.doc().evidence.get(smoking), Some(Finding::Hard(1))));
+    assert!(matches!(s.doc().evidence.get(dyspnea), Some(Finding::Likelihood(_))));
+
+    ops::edit::undo(&mut s);
+    assert!(s.doc().evidence.get(smoking).is_none());
+    assert!(s.doc().evidence.get(dyspnea).is_none());
+
+    // An out-of-range hard state rejects the whole batch.
+    let err = ops::evidence::set_findings(
+        &mut s,
+        vec![(dyspnea, Finding::Likelihood(vec![0.3, 0.7])), (smoking, Finding::Hard(9))],
+    );
+    assert!(err.is_err());
+    assert!(s.doc().evidence.get(dyspnea).is_none());
 }

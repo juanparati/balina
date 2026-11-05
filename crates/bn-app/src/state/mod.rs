@@ -182,6 +182,18 @@ pub enum DialogDesc {
     RenameNetwork,
     RenameTab { id: bn_session::TabId },
     About,
+    /// Desktop only: global AI provider configuration.
+    #[cfg(not(target_arch = "wasm32"))]
+    AiSettings,
+    /// Desktop only: draft a network from pasted text.
+    #[cfg(not(target_arch = "wasm32"))]
+    AiDraft,
+    /// Desktop only: extract likelihood findings from pasted text.
+    /// (The Laya checkpoint download is NOT here — it renders as an overlay
+    /// above this slot so the opening dialog keeps its unsaved state; see
+    /// `dialogs::laya_download`.)
+    #[cfg(not(target_arch = "wasm32"))]
+    AiEvidence,
     /// Web only: filename + format picker for the save-as-download flow.
     #[cfg(target_arch = "wasm32")]
     SaveAsWeb,
